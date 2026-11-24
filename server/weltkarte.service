@@ -1,0 +1,31 @@
+[Unit]
+Description=Weltblick – Live-Weltkarte
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=weltkarte
+Group=weltkarte
+Environment=WK_DATEN=/var/lib/weltkarte
+Environment=WK_HOST=127.0.0.1
+Environment=WK_PORT=4210
+# Optional: AISSTREAM_KEY=… (Schiffe weltweit), OPENSKY_CLIENT_ID/OPENSKY_CLIENT_SECRET (Flugdaten öfter)
+EnvironmentFile=-/etc/weltkarte/weltkarte.env
+ExecStart=/usr/bin/node /opt/weltkarte/server.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ReadWritePaths=/var/lib/weltkarte
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+MemoryMax=400M
+CPUWeight=50
+Nice=5
+
+[Install]
+WantedBy=multi-user.target

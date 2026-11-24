@@ -1,0 +1,9 @@
+# Weltblick – Live-Weltkarte (sslip.io braucht keinen DNS-Eintrag)
+welt.example.org {
+	encode zstd gzip
+	header {
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+	reverse_proxy 127.0.0.1:4210
+}

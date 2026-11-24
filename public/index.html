@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weltblick – Live-Weltkarte</title>
+<meta name="description" content="Flugzeuge, Schiffe, Satelliten, Züge, Erdbeben und Wetter live auf einer Weltkarte.">
+<meta name="theme-color" content="#0b0f17">
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.9.0/dist/maplibre-gl.css">
+<link rel="stylesheet" href="stil.css?v=6">
+</head>
+<body>
+<div id="karte"></div>
+
+<header id="kopf">
+  <div class="marke"><span class="punkt"></span>Weltblick <small>live</small></div>
+  <div class="suche">
+    <input id="suche" type="search" placeholder="Flug, Kennzeichen, Schiff, Satellit …" autocomplete="off" spellcheck="false">
+    <div id="treffer" hidden></div>
+  </div>
+  <button id="ebenenKnopf" class="rund" title="Ebenen" aria-label="Ebenen">☰</button>
+</header>
+
+<aside id="ebenen">
+  <div class="gruppe">
+    <label class="ebene"><input type="checkbox" data-ebene="flug" checked><span class="sym">✈</span><span class="name">Flugzeuge</span><b id="n-flug">–</b></label>
+    <div class="unter" data-zu="flug">
+      <label><input type="checkbox" id="nurMil"> nur Militär</label>
+      <label><input type="checkbox" id="amBoden"> auch am Boden</label>
+    </div>
+    <label class="ebene"><input type="checkbox" data-ebene="schiff" checked><span class="sym">⛴</span><span class="name">Schiffe</span><b id="n-schiff">–</b></label>
+    <div class="unter hinweis" data-zu="schiff" id="aisHinweis"></div>
+    <label class="ebene"><input type="checkbox" data-ebene="sat" checked><span class="sym">🛰</span><span class="name">Satelliten</span><b id="n-sat">–</b></label>
+    <div class="unter" data-zu="sat">
+      <select id="satGruppe">
+        <option value="stations">Raumstationen (ISS …)</option>
+        <option value="visual">Die 100 hellsten</option>
+        <option value="starlink">Starlink</option>
+        <option value="oneweb">OneWeb</option>
+        <option value="gnss">GPS, Galileo, GLONASS …</option>
+        <option value="weather">Wettersatelliten</option>
+        <option value="geo">Geostationär</option>
+        <option value="science">Forschung</option>
+        <option value="amateur">Amateurfunk</option>
+        <option value="neu">Neu gestartet (30 Tage)</option>
+        <option value="active">Alle aktiven</option>
+      </select>
+    </div>
+    <label class="ebene"><input type="checkbox" data-ebene="zug" checked><span class="sym">🚆</span><span class="name">Bahn &amp; Nahverkehr <small>ab Zoom 5</small></span><b id="n-zug">–</b></label>
+    <label class="ebene"><input type="checkbox" data-ebene="beben" checked><span class="sym">◉</span><span class="name">Erdbeben <small>24 h</small></span><b id="n-beben">–</b></label>
+    <label class="ebene"><input type="checkbox" data-ebene="ereignis" checked><span class="sym">🔥</span><span class="name">Feuer, Stürme, Vulkane</span><b id="n-ereignis">–</b></label>
+    <label class="ebene"><input type="checkbox" data-ebene="radar"><span class="sym">🌧</span><span class="name">Regenradar</span><b id="n-radar"></b></label>
+    <label class="ebene"><input type="checkbox" data-ebene="nacht" checked><span class="sym">◐</span><span class="name">Tag und Nacht</span><b></b></label>
+  </div>
+  <div class="gruppe zeile">
+    <span class="titel">Karte</span>
+    <div class="schalter" id="grundkarte">
+      <button data-k="dunkel" class="an">Dunkel</button><button data-k="satellit">Satellit</button><button data-k="hell">Hell</button>
+    </div>
+  </div>
+  <div class="gruppe zeile">
+    <span class="titel">Ansicht</span>
+    <div class="schalter" id="projektion">
+      <button data-p="globe" class="an">Globus</button><button data-p="mercator">Flach</button>
+    </div>
+  </div>
+  <p class="quellen">Daten: OpenSky Network, adsb.lol (ODbL), adsb.fi, adsbdb, Fintraffic Digitraffic (CC BY 4.0), <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous</a>, OVapi, aisstream.io, CelesTrak, USGS, NASA EONET, RainViewer. Karte: OpenFreeMap, © OpenStreetMap, Esri. Quellcode: <a href="https://github.com/oerguen/weltblick" target="_blank" rel="noopener">GitHub</a> (MIT).</p>
+</aside>
+
+<section id="info" hidden>
+  <button class="zu" id="infoZu" aria-label="Schließen">×</button>
+  <div id="infoInhalt"></div>
+</section>
+
+<div id="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.9.0/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/satellite.js@5.0.0/dist/satellite.min.js"></script>
+<script src="app.js?v=6"></script>
+</body>
+</html>
