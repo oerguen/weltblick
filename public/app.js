@@ -194,7 +194,7 @@ function ebenenAufbauen() {
     'icon-rotate': ['get', 'r'], 'icon-rotation-alignment': 'map', 'icon-pitch-alignment': 'map',
     'icon-size': ['interpolate', ['linear'], ['zoom'], 1, 0.22, 5, 0.34, 9, 0.5, 13, 0.75],
     'icon-allow-overlap': true, 'icon-ignore-placement': true,
-  }, paint: { 'icon-color': ['match', ['get', 'g'], ...Object.entries(SCHIFF_ARTEN).flatMap(([k, v]) => [k, v[1]]), '#cbd5e1'], 'icon-halo-color': 'rgba(0,0,0,.6)', 'icon-halo-width': 1 } });
+  }, paint: { 'icon-color': ['match', ['get', 'g'], ...Object.entries(SCHIFF_ARTEN).flatMap(([k, v]) => [k, v[1]]), '#cbd5e1'], 'icon-opacity': ['case', ['==', ['get', 'alt'], 1], 0.45, 1], 'icon-halo-color': 'rgba(0,0,0,.6)', 'icon-halo-width': 1 } });
   neu({ id: 'auswahl', type: 'circle', source: 'auswahl', paint: { 'circle-radius': 17, 'circle-color': 'rgba(56,189,248,.12)', 'circle-stroke-color': '#38bdf8', 'circle-stroke-width': 2, 'circle-pitch-alignment': 'map' } });
   neu({ id: 'flug', type: 'symbol', source: 'flug', layout: {
     'icon-image': ['case', ['==', ['get', 'k'], 'h'], 'heli', 'flug'], 'icon-rotate': ['get', 'r'], 'icon-rotation-alignment': 'map', 'icon-pitch-alignment': 'map',
@@ -346,11 +346,14 @@ async function schiffeLaden() {
     const d = await api('schiffe?b=' + b + '&z=' + z.toFixed(1));
     schiffListe = d.liste; schiffInfo = d;
     schiffeZeichnen();
-    $('#aisHinweis').innerHTML = d.ais === 'live' ? '' : 'Zurzeit nur Ostsee/Finnland (Digitraffic). Für Schiffe weltweit fehlt noch ein kostenloser aisstream.io-Schlüssel.';
+    $('#aisHinweis').innerHTML = d.ais === 'live'
+      ? 'Von freiwilligen Empfängern an Land. Weit draußen auf See und in manchen Meeren (z. B. Schwarzes und Rotes Meer) gibt es kaum Empfänger. Blasse Schiffe: letzte Meldung vor über 1 Stunde.'
+      : 'Zurzeit nur Ostsee/Finnland (Digitraffic), die weltweite Quelle verbindet sich gerade.';
   } catch (e) { console.warn('schiffe', e); }
 }
 function schiffeZeichnen() {
-  const feats = schiffListe.map(s => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [s[2], s[1]] }, properties: { id: s[0], v: s[3] || 0, r: s[5] != null ? s[5] : (s[4] || 0), g: s[6] } }));
+  const t = nun();
+  const feats = schiffListe.map(s => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [s[2], s[1]] }, properties: { id: s[0], v: s[3] || 0, r: s[5] != null ? s[5] : (s[4] || 0), g: s[6], alt: t - s[8] > 3600 ? 1 : 0 } }));
   quelleSetzen('schiff', { type: 'FeatureCollection', features: feats });
   $('#n-schiff').textContent = zahl(schiffInfo.imBild != null ? schiffInfo.imBild : feats.length);
 }

@@ -50,13 +50,13 @@ function puffer(ttl, fn) {
   const frischen = () => {
     if (laeuft) return laeuft;
     laeuft = fn().then(v => { wert = v; zeit = jetzt(); return v; })
-      .catch(e => { log('Fehler:', e.message); return wert; })
+      .catch(e => { log('Fehler:', e.message); zeit = jetzt() - ttl + Math.max(60e3, ttl); return wert; })
       .finally(() => { laeuft = null; });
     return laeuft;
   };
   return async () => {
     if (wert && jetzt() - zeit < ttl) return wert;
-    if (wert) { frischen(); return wert; }
+    if (wert || (zeit && jetzt() - zeit < ttl)) { if (jetzt() - zeit >= ttl) frischen(); return wert; }
     return frischen();
   };
 }
@@ -276,7 +276,7 @@ function aisstreamStarten() {
     ws.onopen = () => {
       ws.send(JSON.stringify({
         APIKey: AIS_KEY, BoundingBoxes: [[[-90, -180], [90, 180]]],
-        FilterMessageTypes: ['PositionReport', 'StandardClassBPositionReport', 'ExtendedClassBPositionReport', 'ShipStaticData', 'StaticDataReport'],
+        FilterMessageTypes: ['PositionReport', 'StandardClassBPositionReport', 'ExtendedClassBPositionReport', 'LongRangeAisBroadcastMessage', 'ShipStaticData', 'StaticDataReport'],
       }));
     };
     ws.onmessage = ev => {
@@ -288,7 +288,7 @@ function aisstreamStarten() {
       const md = m.MetaData || {}, mm = m.Message || {};
       const mmsi = md.MMSI;
       const name = (md.ShipName || '').trim();
-      const pos = mm.PositionReport || mm.StandardClassBPositionReport || mm.ExtendedClassBPositionReport;
+      const pos = mm.PositionReport || mm.StandardClassBPositionReport || mm.ExtendedClassBPositionReport || mm.LongRangeAisBroadcastMessage;
       if (pos) {
         if (Math.abs(pos.Latitude) > 90 || Math.abs(pos.Longitude) > 180) return;
         schiffSetzen(mmsi, {
@@ -323,14 +323,15 @@ function aisstreamStarten() {
 // Alte Schiffs-Positionen entfernen (über 2 h ohne Meldung) und den Stand sichern,
 // damit nach einem Neustart nicht alle Schiffe fehlen
 const SCHIFF_DATEI = path.join(DATEN, 'schiffe.json');
+const SCHIFF_MAX_ALTER = 6 * 3600; // Schiffe in Gegenden mit wenigen Empfängern melden sich selten
 try {
   const alt = JSON.parse(fs.readFileSync(SCHIFF_DATEI, 'utf8'));
-  const grenze = sek() - 2 * 3600;
+  const grenze = sek() - SCHIFF_MAX_ALTER;
   for (const s of alt) if (s.ts >= grenze) schiffe.set(s.mmsi, s);
   log('Schiffe aus Sicherung:', schiffe.size);
 } catch {}
 setInterval(() => {
-  const grenze = sek() - 2 * 3600;
+  const grenze = sek() - SCHIFF_MAX_ALTER;
   for (const [k, s] of schiffe) if (!s.ts || s.ts < grenze) schiffe.delete(k);
   if (ATTRAPPE) return;
   fs.writeFile(SCHIFF_DATEI + '.tmp', JSON.stringify([...schiffe.values()]), e => {
@@ -362,7 +363,7 @@ function schiffeAusgabe(b, z) {
     if (quer ? (sc.lo < w && sc.lo > o) : (sc.lo < w || sc.lo > o)) continue;
     treffer.push(sc);
   }
-  const grenze = z < 4 ? 20000 : 30000;
+  const grenze = z < 4 ? 45000 : 60000;
   let liste = treffer;
   if (treffer.length > grenze) {
     // Fahrende Schiffe zuerst, dann gleichmäßig ausdünnen
@@ -373,7 +374,7 @@ function schiffeAusgabe(b, z) {
   }
   return {
     jetzt: sek(), gesamt: schiffe.size, imBild: treffer.length, ais: aisStatus,
-    liste: liste.map(sc => [sc.mmsi, sc.la, sc.lo, sc.sog == null ? null : runde(sc.sog, 1), sc.cog == null ? null : Math.round(sc.cog), sc.hdg == null ? null : sc.hdg, typGruppe(sc.typ), sc.name || '', sc.ts, sc.len || 0]),
+    liste: liste.map(sc => [sc.mmsi, sc.la, sc.lo, sc.sog == null ? null : runde(sc.sog, 1), sc.cog == null ? null : Math.round(sc.cog), sc.hdg == null ? null : sc.hdg, typGruppe(sc.typ), z >= 5 ? (sc.name || '') : '', sc.ts, sc.len || 0]),
   };
 }
 
